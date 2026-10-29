@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import formatFileSize from '../utils/formatFileSize.js';
 
-export default function UploadComponent({ disabled, error, isUploading, onUpload }) {
+export default function UploadComponent({ error, isUploading, onUpload }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectionError, setSelectionError] = useState('');
@@ -10,10 +10,6 @@ export default function UploadComponent({ disabled, error, isUploading, onUpload
   async function submitUpload(event) {
     event.preventDefault();
     if (isUploading) return;
-    if (disabled) {
-      setSelectionError('Informe e aplique um identificador antes de enviar.');
-      return;
-    }
     if (!selectedFile) {
       setSelectionError('Selecione um arquivo antes de enviar.');
       return;
@@ -30,7 +26,7 @@ export default function UploadComponent({ disabled, error, isUploading, onUpload
   function handleDrop(event) {
     event.preventDefault();
     setIsDragging(false);
-    if (!disabled && !isUploading) {
+    if (!isUploading) {
       const file = event.dataTransfer.files?.[0] || null;
       setSelectedFile(file);
       if (file) setSelectionError('');
@@ -77,7 +73,7 @@ export default function UploadComponent({ disabled, error, isUploading, onUpload
           id="document-file"
           type="file"
           onChange={handleFileChange}
-          disabled={disabled || isUploading}
+          disabled={isUploading}
         />
 
         <div className="upload-meta">
@@ -93,9 +89,8 @@ export default function UploadComponent({ disabled, error, isUploading, onUpload
         </div>
       </form>
 
-      {!disabled && error && <p className="inline-error" role="alert">{error}</p>}
-  {selectionError && <p className="inline-error" role="alert">{selectionError}</p>}
-      {disabled && <p className="inline-hint">Informe um identificador acima para habilitar o envio.</p>}
+        {error && <p className="inline-error" role="alert">{error}</p>}
+        {selectionError && <p className="inline-error" role="alert">{selectionError}</p>}
     </section>
   );
 }

@@ -7,9 +7,18 @@ import './App.css';
 
 function readSavedUserId() {
   try {
-    return window.localStorage.getItem('dms.userId') || '';
+    return window.localStorage.getItem('dms.userId')?.trim() || 'local-user';
   } catch {
-    return '';
+    return 'local-user';
+  }
+}
+
+function saveUserId(userId) {
+  try {
+    window.localStorage.setItem('dms.userId', userId);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -62,12 +71,9 @@ export default function App() {
       return;
     }
 
-    let persistenceNotice = 'Identificador aplicado.';
-    try {
-      window.localStorage.setItem('dms.userId', nextUserId);
-    } catch {
-      persistenceNotice = 'Identificador usado apenas nesta sessão.';
-    }
+    const persistenceNotice = saveUserId(nextUserId)
+      ? 'Identificador aplicado.'
+      : 'Identificador usado apenas nesta sessão.';
 
     if (nextUserId !== userId) {
       setDocuments([]);
@@ -81,12 +87,25 @@ export default function App() {
   }
 
   async function handleUpload(file) {
+    const uploadUserId = userIdDraft.trim() || userId;
+    if (!uploadUserId) {
+      setUploadError('Informe um identificador antes de enviar.');
+      return false;
+    }
+
+    if (uploadUserId !== userId) {
+      saveUserId(uploadUserId);
+      setDocuments([]);
+      setUserId(uploadUserId);
+      setUserIdDraft(uploadUserId);
+    }
+
     setIsUploading(true);
     setUploadError('');
     setNotice('');
 
     try {
-      await uploadDocument(userId, file);
+      await uploadDocument(uploadUserId, file);
       setNotice(`${file.name} enviado.`);
       setRefreshVersion((version) => version + 1);
       return true;
@@ -144,7 +163,7 @@ export default function App() {
       <section className="identity-bar" aria-labelledby="identity-title">
         <div className="identity-copy">
           <h2 id="identity-title">Identificação</h2>
-          <p>Usada para separar documentos nesta versão, sem autenticação.</p>
+          <p>Identificador local padrão; troque para separar documentos, sem autenticação.</p>
         </div>
         <form className="identity-form" onSubmit={applyUserId}>
           <label className="visually-hidden" htmlFor="user-id">Identificador do usuário</label>
@@ -163,7 +182,6 @@ export default function App() {
 
       <div className="workspace-grid">
         <UploadComponent
-          disabled={!userId}
           error={uploadError}
           isUploading={isUploading}
           onUpload={handleUpload}
